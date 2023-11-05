@@ -458,6 +458,10 @@ magic(NoCheckSyslog => sub {
     my $self = shift;
     $self->{no_check_syslog} = 1;
 });
+magic(NoReplicaonly => sub {
+    my $self = shift;
+    $self->{no_replicaonly} = 1;
+});
 
 # Run any magic handlers indicated by the test name or attributes
 sub _run_magic
@@ -611,6 +615,9 @@ sub _create_instances
             my %replica_params = %instance_params;
             $replica_params{config} = $conf->clone();
             $replica_params{config}->set(sync_rightnow_channel => undef);
+	    unless ($self->{no_replicaonly}) {
+                $replica_params{config}->set(replicaonly => 'yes');
+            }
             my $cyrus_replica_prefix = $cassini->val('cyrus replica', 'prefix');
             if (defined $cyrus_replica_prefix and -d $cyrus_replica_prefix) {
                 xlog $self, "replica instance: using [cyrus replica] configuration";
