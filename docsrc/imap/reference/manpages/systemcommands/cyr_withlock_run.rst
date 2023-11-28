@@ -4,9 +4,9 @@
 
 .. _imap-reference-manpages-systemcommands-cyr_withlock_run:
 
-================
+====================
 **cyr_withlock_run**
-================
+====================
 
 is used to run system command with a lock held
 
