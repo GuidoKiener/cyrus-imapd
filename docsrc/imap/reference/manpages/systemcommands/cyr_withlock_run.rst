@@ -29,7 +29,7 @@ Description
 command line, either locking the entire server, or a particular user, so
 no changes can be made to it while this command is running.
 
-WARNING: since this takes an exclusive lock, it MUST NOT be used to run an cyrus
+WARNING: since this takes an exclusive lock, it MUST NOT be used to run a cyrus
 internal program, which will also try to take the same locks, and cause a deadlock.
 
 It is most useful for running an external filesystem snapshot command, which can
