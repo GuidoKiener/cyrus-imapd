@@ -898,6 +898,10 @@ The following is an inventory of RFCs supported by Cyrus IMAP.
 
     IMAP QUOTA Extension
 
+:rfc:`9394`
+
+    IMAP PARTIAL Extension for Paged SEARCH and FETCH
+
 IETF RFC Drafts
 ===============
 

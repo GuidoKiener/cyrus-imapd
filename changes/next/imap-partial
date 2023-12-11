@@ -1,0 +1,14 @@
+
+Description:
+
+Adds support for IMAP PARTIAL extension (RFC 9394)
+
+
+Config changes:
+
+None
+
+
+Upgrade instructions:
+
+None

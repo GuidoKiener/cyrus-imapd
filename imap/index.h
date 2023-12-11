@@ -138,7 +138,12 @@ struct index_state {
     int want_expunged;
     unsigned num_expunged;
     message_t *m;
-    seqset_t *searchres; /* RFC 5182 search results */
+    seqset_t *searchres; /* RFC 5182 SEARCH results */
+    struct {             /* RFC 9394 last SEARCH PARTIAL (to inform next one) */
+        range_t partial;
+        uint32_t last_match;
+        uint64_t highestmodseq; /* of the folder */
+    } last_search;
 };
 
 struct copyargs {
