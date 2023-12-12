@@ -29,8 +29,9 @@ Description
 command line, either locking the entire server, or a particular user, so
 no changes can be made to it while this command is running.
 
-WARNING: since this takes an exclusive lock, it MUST NOT be used to run a cyrus
-internal program, which will also try to take the same locks, and cause a deadlock.
+WARNING: since this takes an exclusive lock, it will deadlock if the command tries
+to connect to Cyrus via IMAP/JMAP/etc and run commands that take exclusive locks.
+You can run cyrus commandline tools so long as the environment is passed through.
 
 It is most useful for running an external filesystem snapshot command, which can
 be run safely, knowing that files aren't in a partial state.
@@ -70,6 +71,13 @@ Files
 =====
 
 /etc/imapd.conf
+
+
+Environment
+===
+
+Sets the `CYRUS_HAVELOCK_GLOBAL` or `CYRUS_HAVELOCK_USER` environment variables,
+to tell any called cyrus command that this lock is already held.
 
 See Also
 ========
