@@ -497,6 +497,55 @@ EXPORTED sasl_security_properties_t *mysasl_secprops(int flags)
     return &ret;
 }
 
+/* Callback function to change channel binding */
+EXPORTED int mysasl_server_get_binding(sasl_conn_t *conn,
+                                       void *context, /* must be saslprops_t */
+                                       const char *plugin,
+                                       const char *cbindingname)
+{
+    struct saslprops_t *saslprops = context;
+
+    if (!conn || !context || !plugin || !cbindingname) {
+        return SASL_FAIL;
+    }
+
+    if (saslprops->cbinding_alternate.name != NULL) {
+        if (strcmp(cbindingname, saslprops->cbinding_alternate.name) == 0) {
+            int r = sasl_setprop(conn, SASL_CHANNEL_BINDING,
+                                 &saslprops->cbinding_alternate);
+            if (r != SASL_OK) {
+                syslog(LOG_NOTICE, "sasl_setprop(CHANNEL_BINDING) failed");
+                return r;
+            }
+            syslog(LOG_DEBUG,
+                   "Plugin '%s' selects channel binding '%s'",
+                   plugin, cbindingname);
+            return SASL_OK;
+        }
+    }
+
+    if (saslprops->cbinding.name != NULL) {
+        if (strcmp(cbindingname, saslprops->cbinding.name) == 0) {
+            int r = sasl_setprop(conn, SASL_CHANNEL_BINDING,
+                                 &saslprops->cbinding);
+            if (r != SASL_OK) {
+                syslog(LOG_NOTICE, "sasl_setprop(CHANNEL_BINDING) failed");
+                return r;
+            }
+            syslog(LOG_DEBUG,
+                   "Plugin '%s' selects channel binding '%s'",
+                   plugin, cbindingname);
+            return SASL_OK;
+        }
+    }
+
+    syslog(LOG_NOTICE,
+           "Requested Channel Binding '%s' not supported",
+           cbindingname);
+
+    return SASL_FAIL;
+}
+
 /* true if 'authstate' is in 'opt' */
 EXPORTED int global_authisa(struct auth_state *authstate, enum imapopt opt)
 {
@@ -1093,6 +1142,7 @@ EXPORTED void saslprops_reset(struct saslprops_t *saslprops)
     buf_reset(&saslprops->authid);
     saslprops->ssf = 0;
     saslprops->cbinding.name = NULL;
+    saslprops->cbinding_alternate.name = NULL;
 }
 
 EXPORTED void saslprops_free(struct saslprops_t *saslprops)

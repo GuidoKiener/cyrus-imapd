@@ -1134,6 +1134,7 @@ EXPORTED int tls_start_servertls(int readfd, int writefd, int timeout,
     unsigned int n;
     const SSL_CIPHER *cipher;
     X509   *peer;
+    X509   *cert;
     const char *tls_protocol = NULL;
     const char *tls_cipher_name = NULL;
     const unsigned char *alpn = NULL;
@@ -1305,6 +1306,48 @@ EXPORTED int tls_start_servertls(int readfd, int writefd, int timeout,
         }
         X509_free(peer);
     }
+
+    /*
+     * Calculate hash of server certificate for channel binding type
+     * 'tls-server-end-point' according to:
+     * https://www.rfc-editor.org/rfc/rfc5929.html#section-4.1
+     */
+    saslprops->cbinding_alternate.name = NULL;
+    saslprops->cbinding_alternate.len = 0;
+
+    cert = SSL_get_certificate(tls_conn);
+    if (cert != NULL) {
+        int md_nid = NID_undef;
+        const EVP_MD *md = NULL;
+        unsigned int len;
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10101001L)
+        if (!X509_get_signature_info(cert, &md_nid, NULL, NULL, NULL)) {
+#else
+        if (!OBJ_find_sigid_algs(X509_get_signature_nid(cert), &md_nid, NULL)) {
+#endif
+            syslog(LOG_DEBUG, "signature algorithm not set");
+        }
+
+        switch (md_nid) {
+            case NID_md5:
+            case NID_sha1:
+                md = EVP_sha256();
+                break;
+            default:
+                md = EVP_get_digestbynid(md_nid);
+                break;
+        }
+
+        if (md && X509_digest(cert, md, saslprops->data_alternate, &len)) {
+            saslprops->cbinding_alternate.name = "tls-server-end-point";
+            saslprops->cbinding_alternate.data = saslprops->data_alternate;
+            saslprops->cbinding_alternate.len = len;
+        }
+
+        X509_free(cert);
+    }
+
     tls_protocol = SSL_get_version(tls_conn);
     cipher = SSL_get_current_cipher(tls_conn);
     tls_cipher_name = SSL_CIPHER_get_name(cipher);

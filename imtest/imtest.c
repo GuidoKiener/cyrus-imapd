@@ -106,6 +106,7 @@ static sasl_conn_t *conn;
 static int sock; /* socket descriptor */
 
 static int verbose=0;
+static int use_tls_server_end_point = 1;
 
 static struct protstream *pout, *pin;
 
@@ -792,7 +793,46 @@ static void do_starttls(int ssl, char *keyfile, unsigned *ssf)
 #if (OPENSSL_VERSION_NUMBER >= 0x0090800fL)
     static struct sasl_channel_binding cbinding;
 
-    if (SSL_version(tls_conn) <= TLS1_2_VERSION) {
+    if (use_tls_server_end_point) {
+        X509 * cert = SSL_get_peer_certificate(tls_conn);
+        if (cert != NULL) {
+            int md_nid = NID_undef;
+            const EVP_MD *md = NULL;
+            unsigned int len;
+            static unsigned char hash[EVP_MAX_MD_SIZE];
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10101001L)
+            if (!X509_get_signature_info(cert, &md_nid, NULL, NULL, NULL)) {
+#else
+            if (!OBJ_find_sigid_algs(X509_get_signature_nid(cert), &md_nid, NULL)) {
+#endif
+                imtest_fatal("signature algorithm not set");
+            }
+
+            switch (md_nid) {
+                case NID_md5:
+                case NID_sha1:
+                    md = EVP_sha256();
+                    break;
+                default:
+                    md = EVP_get_digestbynid(md_nid);
+                    break;
+            }
+
+            if (md && X509_digest(cert, md, hash, &len)) {
+                cbinding.name = "tls-server-end-point";
+                cbinding.critical = 0;
+                cbinding.data = hash;
+                cbinding.len = len;
+            }
+            else {
+                imtest_fatal("cannot calculate hash of certificate");
+            }
+
+            X509_free(cert);
+        }
+    }
+    else if (SSL_version(tls_conn) <= TLS1_2_VERSION) {
         static unsigned char finished[EVP_MAX_MD_SIZE];
 
         if (SSL_session_reused(tls_conn)) {

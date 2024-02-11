@@ -670,6 +670,7 @@ static const struct sasl_callback mysasl_cb[] = {
     { SASL_CB_PROXY_POLICY, (mysasl_cb_ft *) &imapd_proxy_policy, (void*) &imapd_proxyctx },
     { SASL_CB_CANON_USER, (mysasl_cb_ft *) &imapd_canon_user, (void*) &disable_referrals },
     { SASL_CB_LOG, (mysasl_cb_ft *) &imapd_sasl_log, NULL },
+    { SASL_CB_SERVER_CHANNEL_BINDING, (mysasl_cb_ft *) &mysasl_server_get_binding, &saslprops},
     { SASL_CB_LIST_END, NULL, NULL }
 };
 
@@ -14114,6 +14115,7 @@ static int reset_saslconn(sasl_conn_t **conn)
                           buf_cstringnull_ifempty(&saslprops.iplocalport),
                           buf_cstringnull_ifempty(&saslprops.ipremoteport),
                           NULL, 0, conn);
+
     if(ret != SASL_OK) return ret;
 
     secprops = mysasl_secprops(0);

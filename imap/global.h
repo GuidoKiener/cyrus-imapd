@@ -92,7 +92,13 @@ extern int mysasl_config(void *context,
                          const char *option,
                          const char **result,
                          unsigned *len);
+
 extern sasl_security_properties_t *mysasl_secprops(int flags);
+
+extern int mysasl_server_get_binding(sasl_conn_t *conn,
+                                     void *context, /* must be saslprops_t */
+                                     const char *plugin,
+                                     const char *cbindingname);
 
 #if GCC_VERSION >= 80000
 typedef void mysasl_cb_ft;  /* shut up GCC */
@@ -144,9 +150,12 @@ struct saslprops_t {
     struct buf authid;
     sasl_channel_binding_t cbinding;
     unsigned char tls_finished[MAX_FINISHED_LEN];
+    sasl_channel_binding_t cbinding_alternate;
+    unsigned char data_alternate[MAX_FINISHED_LEN];
 };
 #define SASLPROPS_INITIALIZER \
     { BUF_INITIALIZER, BUF_INITIALIZER, 0, BUF_INITIALIZER, \
+      { NULL, 0, 0, NULL }, { 0 },\
       { NULL, 0, 0, NULL }, { 0 } }
 
 /* Misc utils */
